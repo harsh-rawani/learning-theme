@@ -1,0 +1,129 @@
+<style>
+
+.tab-options {
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+}
+
+.sort-options {
+    margin-bottom: 20px;
+}
+
+  
+  </style>
+<!-- Tab navigation for tags -->
+<div class="tab-options">
+    <button class="tab-btn active" data-tag="all">All</button>
+    {% for tag in blog.tags %}
+        <button class="tab-btn" data-tag="{{ tag }}">{{ tag }}</button>
+    {% endfor %}
+</div>
+
+<!-- Sorting options -->
+<div class="sort-options">
+    <label for="sortBy">Sort by:</label>
+    <select id="sortBy">
+        <option value="date-desc">Newest</option>
+        <option value="date-asc">Oldest</option>
+        <option value="title-asc">A-Z</option>
+        <option value="title-desc">Z-A</option>
+    </select>
+</div>
+
+<!-- Container for blog posts -->
+<div id="blog-posts-container">
+    {% for article in blog.articles %}
+    <div class="blog-post" data-title="{{ article.title }}" data-date="{{ article.published_at }}" data-tags="{{ article.tags | join: ',' }}">
+        <h2>{{ article.title }}</h2>
+        <p>{{ article.published_at | date: '%B %d, %Y' }}</p>
+        <div class="blog-content">{{ article.excerpt }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var sortBy = document.getElementById('sortBy');
+    var tabs = document.querySelectorAll('.tab-btn');
+    var container = document.getElementById('blog-posts-container');
+    var posts = Array.from(container.getElementsByClassName('blog-post'));
+    var activeTag = 'all'; // Default is to show all posts
+
+    // Function to filter and sort posts
+    function filterAndSort() {
+        // Filter posts by tag
+        var filteredPosts = posts.filter(function(post) {
+            var tags = post.getAttribute('data-tags').split(',');
+            return activeTag === 'all' || tags.includes(activeTag);
+        });
+
+        // Sort filtered posts
+        filteredPosts.sort(function(a, b) {
+            if (sortBy.value === 'date-asc') {
+                return new Date(a.getAttribute('data-date')) - new Date(b.getAttribute('data-date'));
+            } else if (sortBy.value === 'date-desc') {
+                return new Date(b.getAttribute('data-date')) - new Date(a.getAttribute('data-date'));
+            } else if (sortBy.value === 'title-asc') {
+                return a.getAttribute('data-title').localeCompare(b.getAttribute('data-title'));
+            } else if (sortBy.value === 'title-desc') {
+                return b.getAttribute('data-title').localeCompare(a.getAttribute('data-title'));
+            }
+        });
+
+        // Clear container and re-add filtered & sorted posts
+        container.innerHTML = '';
+        filteredPosts.forEach(function(post) {
+            container.appendChild(post);
+        });
+    }
+
+    // Tab click event to filter posts by tag
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            // Add active class to the clicked tab
+            tab.classList.add('active');
+            // Set the active tag
+            activeTag = tab.getAttribute('data-tag');
+            // Filter and sort the posts
+            filterAndSort();
+        });
+    });
+
+    // Sort change event
+    sortBy.addEventListener('change', function() {
+        // Filter and sort posts when the sorting option changes
+        filterAndSort();
+    });
+
+    // Initial filter and sort on page load
+    filterAndSort();
+});
+
+</script>
+
+{% schema %}
+  {
+    "name": "sorted articles",
+    "settings": [],
+    "presets": [
+      {
+        "name": "sorted articles"
+      }
+    ]
+  }
+{% endschema %}
